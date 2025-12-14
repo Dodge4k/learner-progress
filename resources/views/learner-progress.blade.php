@@ -13,7 +13,6 @@
     <div class="container mx-auto px-4 py-8 max-w-6xl">
         <h1 class="text-3xl font-bold mb-8 text-center">Learner Progress Dashboard</h1>
 
-        <!-- Controls -->
         <div class="bg-white p-6 rounded-lg shadow-md mb-8 flex flex-wrap gap-4 items-end">
             <div class="flex-1 min-w-64">
                 <label for="course-filter" class="block text-sm font-medium text-gray-700 mb-2">
@@ -39,7 +38,7 @@
             </div>
         </div>
 
-        <!-- Learners List -->
+        
         <div id="learners-container">
     @foreach($learners as $learner)
         <div class="learner-card bg-white p-6 rounded-lg shadow-md mb-6"
@@ -60,7 +59,7 @@
                     @endforeach
                 </ul>
 
-                <!-- Hidden average for sorting -->
+                
                 <div class="hidden avg-progress">
                     {{ $learner->enrolments->avg('progress') ?? 0 }}
                 </div>
@@ -73,43 +72,60 @@
     @endif
 </div>
     <script>
-        const courseFilter = document.getElementById('course-filter');
-        const sortSelect = document.getElementById('sort-progress');
-        const container = document.getElementById('learners-container');
-        const cards = container.querySelectorAll('.learner-card');
+    const courseFilter = document.getElementById('course-filter');
+    const sortSelect = document.getElementById('sort-progress');
+    const container = document.getElementById('learners-container');
+    const cards = container.querySelectorAll('.learner-card');
 
-        function applyFiltersAndSort() {
-            const selectedCourse = courseFilter.value.toLowerCase();
-            let visibleCards = Array.from(cards);
+    function applyFiltersAndSort() {
+        const selectedCourse = courseFilter.value.trim(); 
+        let visibleCards = Array.from(cards);
 
-            // Filter
-            if (selectedCourse) {
-                visibleCards = visibleCards.filter(card => {
-                    const courses = card.dataset.courses.toLowerCase();
-                    return courses.includes(selectedCourse);
-                });
-            }
-
-            // Sort
-            if (sortSelect.value !== 'none') {
-                visibleCards.sort((a, b) => {
-                    const avgA = parseFloat(a.querySelector('.avg-progress')?.textContent || 0);
-                    const avgB = parseFloat(b.querySelector('.avg-progress')?.textContent || 0);
-                    return sortSelect.value === 'desc' ? avgB - avgA : avgA - avgB;
-                });
-            }
-
-            // Reorder and show/hide
-            visibleCards.forEach(card => container.appendChild(card));
-            cards.forEach(card => {
-                card.style.display = visibleCards.includes(card) ? 'block' : 'none';
+        
+        if (selectedCourse) {
+            visibleCards = visibleCards.filter(card => {
+                const courses = card.dataset.courses.toLowerCase();
+                return courses.includes(selectedCourse.toLowerCase());
             });
         }
 
-        courseFilter.addEventListener('change', applyFiltersAndSort);
-        sortSelect.addEventListener('change', applyFiltersAndSort);
+        
+        if (sortSelect.value !== 'none') {
+            visibleCards.sort((a, b) => {
+                let progressA, progressB;
 
-        applyFiltersAndSort();
-    </script>
+                if (selectedCourse) {
+                    
+                    const liA = Array.from(a.querySelectorAll('li')).find(li => 
+                        li.querySelector('span.font-medium').textContent.trim() === selectedCourse
+                    );
+                    const liB = Array.from(b.querySelectorAll('li')).find(li => 
+                        li.querySelector('span.font-medium').textContent.trim() === selectedCourse
+                    );
+                    progressA = liA ? parseFloat(liA.querySelector('span.text-blue-600').textContent) : 0;
+                    progressB = liB ? parseFloat(liB.querySelector('span.text-blue-600').textContent) : 0;
+                } else {
+                    
+                    progressA = parseFloat(a.querySelector('.avg-progress')?.textContent || 0);
+                    progressB = parseFloat(b.querySelector('.avg-progress')?.textContent || 0);
+                }
+
+                return sortSelect.value === 'desc' ? progressB - progressA : progressA - progressB;
+            });
+        }
+
+        
+        visibleCards.forEach(card => container.appendChild(card));
+        cards.forEach(card => {
+            card.style.display = visibleCards.includes(card) ? 'block' : 'none';
+        });
+    }
+
+    courseFilter.addEventListener('change', applyFiltersAndSort);
+    sortSelect.addEventListener('change', applyFiltersAndSort);
+
+    
+    applyFiltersAndSort();
+</script>
 </body>
 </html>
